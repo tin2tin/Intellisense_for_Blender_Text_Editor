@@ -133,17 +133,19 @@ class TEXT_MT_intellisense_menu(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
         options = complete(context)
+        options = options[2].split("\n")
 
-        options = options[2].split("  ")
-        i=0
+        while("" in options) :
+            options.remove("")
+
+        att = False
+
         for op in options:
-            options[i] = op.split("\n", 1)[0]
-            options[i] = options[i].split("function to be", 1)[0]
-            options[i] = options[i].split("@", 1)[0]
-            i += 1
-        while("" in options) : 
-            options.remove("")            
-        for op in options:
+            if op.find("attribute")>-1:
+                att = True
+            if not att:
+                op = op.lstrip()
+
             layout.operator("text.intellioptions", text=op).text = op
 
 
@@ -226,4 +228,4 @@ def unregister():
 
 if __name__ == "__main__":
     register()
-#unregister()
+
