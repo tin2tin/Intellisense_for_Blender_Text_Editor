@@ -91,11 +91,11 @@ class TEXT_OT_intellisense_options(bpy.types.Operator):
                     intersect = [i, j]
                     break
 
+        comp = comp.strip()
         if intersect[0] > -1:
             newline = line[0:lline - intersect[1] - 1] + comp
         else:
             newline = line + comp
-
         #print(newline)
         text.current_line.body = newline
 
@@ -141,8 +141,8 @@ class TEXT_MT_intellisense_menu(bpy.types.Menu):
             options[i] = options[i].split("function to be", 1)[0]
             options[i] = options[i].split("@", 1)[0]
             i += 1
-        while("" in options) :
-            options.remove("")
+        while("" in options) : 
+            options.remove("")            
         for op in options:
             layout.operator("text.intellioptions", text=op).text = op
 
