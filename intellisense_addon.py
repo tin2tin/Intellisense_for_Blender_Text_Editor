@@ -19,10 +19,10 @@
 
 bl_info = {
     "name": "Intellisense",
-    "author": "Mackraken, tintwotin",
+    "author": "Mackraken, tintwotin, Jose Conseco",
     "version": (0, 3),
     "blender": (2, 80, 0),
-    "location": "Ctrl + Shift + Space, Edit and Context menus",
+    "location": "Ctrl + Space",
     "description": "Adds intellisense to the Text Editor",
     "warning": "",
     "wiki_url": "",
@@ -31,12 +31,11 @@ bl_info = {
 }
 
 import bpy
+from console import intellisense
+from console_python import get_console
 
 
 def complete(context):
-    from console import intellisense
-    from console_python import get_console
-
     sc = context.space_data
     text = sc.text
 
@@ -51,9 +50,7 @@ def complete(context):
     line = text.current_line.body
     cursor = text.current_character
 
-    result = intellisense.expand(line, cursor, console.locals, bpy.app.debug)
-
-    return result
+    return intellisense.expand(line, cursor, console.locals, bpy.app.debug)
 
 
 class TEXT_OT_intellisense_options(bpy.types.Operator):
@@ -62,10 +59,6 @@ class TEXT_OT_intellisense_options(bpy.types.Operator):
     bl_label = "Intellisense Options"
 
     text: bpy.props.StringProperty()
-
-    @classmethod
-    def poll(cls, context):
-        return context.active_object is not None
 
     def execute(self, context):
         sc = context.space_data
@@ -104,89 +97,64 @@ class TEXT_OT_intellisense_options(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class TEXT_PT_intellisense_panel(bpy.types.Panel):
-    bl_label = "Intellisense"
-    bl_space_type = "TEXT_EDITOR"
-    bl_region_type = "UI"
-    bl_category = "Text"
 
-    text: bpy.props.StringProperty()
+def auto_complete(self, context):
+    options = complete(context)
+    options = options[2].split("\n")
 
-    def draw(self, context):
-        layout = self.layout
-        row = layout.row()
-        text = self.text
+    while("" in options):
+        options.remove("")
 
-        col = layout.column()
-
-        col.operator("text.intellisense", text="Intellisense")
-        col.menu("text.intelli_menu", text="Options")
-
-
-class TEXT_MT_intellisense_menu(bpy.types.Menu):
-    '''Intellisense Menu'''
-    bl_label = "Intellisense"
-    bl_idname = "text.intelli_menu"
-
-    text = ""
-
-    def draw(self, context):
-        layout = self.layout
-        options = complete(context)
-        options = options[2].split("\n")
-
-        while("" in options) :
-            options.remove("")
-
-        att = False
-
-        for op in options:
-            if op.find("attribute")>-1:
-                att = True
-            if not att:
-                op = op.lstrip()
-
-            layout.operator("text.intellioptions", text=op).text = op
+    att = False
+    results = []
+    for i, op in enumerate(options):
+        if op.find("attribute") > -1:
+            att = True
+        if not att:
+            op = op.lstrip()
+        results.append((op, op, op))
+        if i > 30:
+            break
+    return results
 
 
 class TEXT_OT_Intellisense(bpy.types.Operator):
     '''Text Editor Intellisense'''
     bl_idname = "text.intellisense"
     bl_label = "Text Editor Intellisense"
-
-    text = ""
-
-    #   @classmethod
-    #   def poll(cls, context):
-    #	   return context.active_object is not None
-
-    def execute(self, context):
+    bl_options = {'REGISTER', 'UNDO'}
+    bl_property = 'txt'
+    
+    txt: bpy.props.EnumProperty(name="Suggestions", items=auto_complete)
+    
+    def invoke(self, context, event):
+        # return context.window_manager.invoke_props_dialog(self)
         sc = context.space_data
         text = sc.text
-
         if text.current_character > 0:
             result = complete(context)
+            text.current_line.body = result[0]
+            bpy.ops.text.move(type='LINE_END')
+            if result[2] != '':
+                wm = context.window_manager
+                wm.invoke_search_popup(self)
+        return {'FINISHED'}
 
-            if result[2] == "":
-                text.current_line.body = result[0]
-                bpy.ops.text.move(type='LINE_END')
-            else:
-                bpy.ops.wm.call_menu(name=TEXT_MT_intellisense_menu.bl_idname)
+    # def draw(self, context):
+    #     layout = self.layout
+    #     layout.prop_search(self, 'text', self, 'txt')
 
+    def execute(self, context):
+        if self.txt:
+            bpy.ops.text.intellioptions(text = self.txt)
         return {'FINISHED'}
 
 
 classes = [
     TEXT_OT_Intellisense,
     TEXT_OT_intellisense_options,
-    TEXT_MT_intellisense_menu,
-    TEXT_PT_intellisense_panel,
 ]
 
-
-def panel_append(self, context):
-    self.layout.separator()
-    self.layout.menu("text.intelli_menu")
 
 
 addon_keymaps = []
@@ -207,11 +175,9 @@ def register():
             type='SPACE',
             value='PRESS',
             ctrl=True,
-            shift=True)
+            shift=False)
         addon_keymaps.append((km, kmi))
 
-    bpy.types.TEXT_MT_edit.append(panel_append)
-    bpy.types.TEXT_MT_context_menu.append(panel_append)
 
 
 def unregister():
@@ -222,8 +188,6 @@ def unregister():
         km.keymap_items.remove(kmi)
     addon_keymaps.clear()
 
-    bpy.types.TEXT_MT_edit.remove(panel_append)
-    bpy.types.TEXT_MT_context_menu.remove(panel_append)
 
 
 if __name__ == "__main__":
