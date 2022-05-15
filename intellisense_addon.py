@@ -51,7 +51,7 @@ def complete(context):
     line = text.current_line.body
     cursor = text.current_character
 
-    result = intellisense.expand(line, cursor, console.locals, bpy.app.debug)
+    result = intellisense.expand(line, cursor, console.locals)
 
     return result
 
