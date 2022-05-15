@@ -50,7 +50,7 @@ def complete(context):
     line = text.current_line.body
     cursor = text.current_character
 
-    return intellisense.expand(line, cursor, console.locals, bpy.app.debug)
+    return intellisense.expand(line, cursor, console.locals)
 
 
 class TEXT_OT_intellisense_options(bpy.types.Operator):
