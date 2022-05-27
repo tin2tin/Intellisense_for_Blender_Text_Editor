@@ -63,10 +63,6 @@ class TEXT_OT_intellisense_options(bpy.types.Operator):
 
     text: bpy.props.StringProperty()
 
-    @classmethod
-    def poll(cls, context):
-        return context.active_object is not None
-
     def execute(self, context):
         sc = context.space_data
         text = sc.text
