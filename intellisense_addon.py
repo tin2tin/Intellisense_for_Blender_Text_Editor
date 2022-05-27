@@ -120,13 +120,13 @@ class TEXT_PT_intellisense_panel(bpy.types.Panel):
         col = layout.column()
 
         col.operator("text.intellisense", text="Intellisense")
-        col.menu("text.intelli_menu", text="Options")
+        col.menu("text.intellisense_menu", text="Options")
 
 
 class TEXT_MT_intellisense_menu(bpy.types.Menu):
     '''Intellisense Menu'''
     bl_label = "Intellisense"
-    bl_idname = "text.intelli_menu"
+    bl_idname = "TEXT_MT_intellisense_menu"
 
     text = ""
 
